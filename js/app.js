@@ -32,6 +32,9 @@ const STATES = {
     IDLE: 'IDLE',
     ACTIVE: 'ACTIVE',
     SAVING: 'SAVING',
+    FETCHING: 'FETCHING',
+    LOADING_MODEL: 'LOADING_MODEL',
+    PROCESSING_AUDIO: 'PROCESSING_AUDIO',
     ERROR: 'ERROR'
 };
 
@@ -59,9 +62,25 @@ function setState(newState) {
             indicator.textContent = 'Typing...';
             indicator.className = 'status-badge saving';
             break;
+        case STATES.FETCHING:
+            indicator.textContent = 'Fetching...';
+            indicator.className = 'status-badge';
+            break;
+        case STATES.LOADING_MODEL:
+            indicator.textContent = 'Loading AI...';
+            indicator.className = 'status-badge';
+            break;
+        case STATES.PROCESSING_AUDIO:
+            indicator.textContent = 'Thinking...';
+            indicator.className = 'status-badge saving';
+            break;
         case STATES.SAVING:
             indicator.textContent = 'Saving...';
             indicator.className = 'status-badge saving';
+            break;
+        case STATES.ERROR:
+            indicator.textContent = 'Error';
+            indicator.className = 'status-badge error'; // Add error style if needed
             break;
         case STATES.ERROR:
             indicator.textContent = 'Error';
@@ -216,6 +235,7 @@ function createBlockElement(blockData) {
         <div class="block-header">
             <span class="block-type">${blockData.type}</span>
             <div class="block-actions">
+                <button class="btn btn-icon" onclick="toggleSpeech('${blockData.id}')" title="Voice Input">🎤</button>
                 <button class="btn btn-icon" onclick="removeBlock('${blockData.id}')" title="Delete Block">🗑️</button>
             </div>
         </div>
@@ -346,6 +366,105 @@ function insertWord(word) {
     // For simplicity, just append to the last block if none focused
     // In a real app, we'd track cursor position globally
     alert(`Clicked ${word} - (Cursor insertion to be implemented)`);
+}
+
+// --- Local Speech to Text (Transformers.js) ---
+let transcriber = null;
+let mediaRecorder = null;
+let audioChunks = [];
+
+async function toggleSpeech(blockId) {
+    // Check if recording
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        setState(STATES.PROCESSING_AUDIO);
+        return;
+    }
+
+    // Initialize Model if needed
+    if (!transcriber) {
+        setState(STATES.LOADING_MODEL);
+        try {
+            // Using window.pipeline from index.html
+            transcriber = await window.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
+        } catch (e) {
+            console.error("Model Load Failed", e);
+            setState(STATES.ERROR);
+            alert("Failed to load AI model. Check internet connection for first download.");
+            return;
+        }
+    }
+
+    // Start Recording
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            await processAudio(audioBlob, blockId);
+
+            // Stop all tracks to release mic
+            stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        setState(STATES.ACTIVE);
+
+        // Visual feedback
+        const btn = document.querySelector(`.block[data-id="${blockId}"] .btn-icon[title="Voice Input"]`);
+        if (btn) btn.style.background = 'var(--accent-danger)';
+
+    } catch (e) {
+        console.error("Mic Error", e);
+        alert("Microphone access denied.");
+        setState(STATES.ERROR);
+    }
+}
+
+async function processAudio(audioBlob, blockId) {
+    try {
+        // Convert Blob to AudioBuffer
+        const arrayBuffer = await audioBlob.arrayBuffer();
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+        // Get channel data (Whisper expects mono, 16kHz usually, but library handles resampling)
+        let audioData = audioBuffer.getChannelData(0);
+
+        // Run Inference
+        const output = await transcriber(audioData);
+        const text = output.text;
+
+        if (text) {
+            const doc = state.documents[state.currentDocId];
+            const block = doc.blocks.find(b => b.id === blockId);
+            if (block) {
+                block.content += (block.content ? ' ' : '') + text.trim();
+
+                // Update UI
+                const textarea = document.querySelector(`.block[data-id="${blockId}"] textarea`);
+                if (textarea) textarea.value = block.content;
+
+                handleInput(blockId, textarea); // Trigger save
+            }
+        }
+
+        setState(STATES.IDLE);
+
+        // Reset button style
+        const btn = document.querySelector(`.block[data-id="${blockId}"] .btn-icon[title="Voice Input"]`);
+        if (btn) btn.style.background = '';
+
+    } catch (e) {
+        console.error("Transcription Error", e);
+        setState(STATES.ERROR);
+    }
 }
 
 // Initialize

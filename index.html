@@ -12,6 +12,9 @@
     
     <!-- Styles -->
     <link rel="stylesheet" href="css/style.css">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
 </head>
 <body>
 
@@ -107,6 +110,20 @@
     </main>
 
     <!-- Scripts -->
+    <script type="module">
+        import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.14.0';
+        window.pipeline = pipeline;
+        window.env = env;
+        // Skip local model check since we are using CDN
+        env.allowLocalModels = false;
+    </script>
     <script src="js/app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(() => console.log('Service Worker Registered'))
+                .catch((err) => console.log('Service Worker Failed', err));
+        }
+    </script>
 </body>
 </html>
