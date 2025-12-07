@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Secure Creative Journal</title>
+  <style>
+    :root {
+      --bg-primary: #0c0f1a;
+      --bg-secondary: #1c1f2b;
+      --bg-tertiary: #2b2f3f;
+      --bg-input: #12131a;
+      --text-primary: #e3e6f0;
+      --text-secondary: #c2d6ff;
+      --text-accent: #9fbfff;
+      --button-primary: #3f5efb;
+      --button-hover: #2b45b7;
+      --button-success: #1dd1a1;
+      --border-color: #444;
+      --shadow: rgba(0,0,0,0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Courier New', monospace;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Password Overlay */
+    #passwordOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 9999;
+    }
+
+    #passwordOverlay h2 {
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+    }
+
+    #passwordInput {
+      padding: 0.8rem;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-input);
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      width: 300px;
+    }
+
+    #passwordOverlay button {
+      background: var(--button-primary);
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    #passwordOverlay button:hover {
+      background: var(--button-hover);
+    }
+
+    #fallbackLog {
+      color: #ff6b6b;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    /* Main Layout */
+    .main-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background: var(--bg-secondary);
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px var(--shadow);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .header-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--text-secondary);
+    }
+
+    .document-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .document-selector select {
+      padding: 0.5rem;
+      border-radius: 4px;
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      min-width: 150px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .device-name {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .status-indicator {
+      padding: 0.3rem 0.8rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .workspace {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .left-panel, .right-panel {
+      width: 300px;
+      background: var(--bg-secondary);
+      padding: 1rem;
+      overflow-y: auto;
+      border-right: 1px solid var(--border-color);
+    }
+
+    .right-panel {
+      border-right: none;
+      border-left: 1px solid var(--border-color);
+    }
+
+    .center-panel {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      background: var(--bg-primary);
+    }
+
+    .panel-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Writing Blocks */
+    .writing-block {
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 4px var(--shadow);
+    }
+
+    .block-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .block-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--text-accent);
+    }
+
+    .block-controls {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .writing-area {
+      width: 100%;
+      min-height: 150px;
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      padding: 1rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-family: inherit;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .writing-area:focus {
+      outline: none;
+      border-color: var(--button-primary);
+    }
+
+    .writing-area::placeholder {
+      color: #888;
+    }
+
+    /* Buttons */
+    .btn {
+      background: var(--button-primary);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .btn:hover {
+      background: var(--button-hover);
+    }
+
+    .btn-small {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
+    }
+
+    .btn-success {
+      background: var(--button-success);
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    /* Word Bank */
+    .word-bank {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .word-chip {
+      background: var(--bg-tertiary);
+      padding: 0.3rem 0.8rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.3s;
+      user-select: none;
+    }
+
+    .word-chip:hover {
+      background: var(--button-primary);
+    }
+
+    /* Analytics */
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .stat-card {
+      background: var(--bg-tertiary);
+      padding: 1rem;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--text-accent);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.5rem;
+    }
+
+    /* Tag Display */
+    .tag-display {
+      background: var(--bg-input);
+      padding: 0.8rem;
+      border-radius: 6px;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .tag {
+      display: inline-block;
+      background: var(--button-primary);
+      color: white;
+      padding: 0.2rem 0.6rem;
+      border-radius: 3px;
+      margin: 0.2rem;
+      font-size: 0.8rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .left-panel, .right-panel {
+        width: 250px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .workspace {
+        flex-direction: column;
+      }
+      
+      .left-panel, .right-panel {
+        width: 100%;
+        max-height: 200px;
+      }
+      
+      .center-panel {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Password Overlay -->
+  <div id="passwordOverlay">
+    <h2>🔐 Enter Your Access Password</h2>
+    <input type="password" id="passwordInput" placeholder="••••••••" />
+    <button onclick="submitPassword()">Unlock Journal</button>
+    <div id="fallbackLog"></div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="main-container">
+    <!-- Header -->
+    <header>
+      <div class="header-left">
+        <div class="header-title">🧬 Secure Creative Journal</div>
+        <div class="document-selector">
+          <select id="documentList" onchange="loadDocument(this.value)">
+            <option value="">(Select or Create)</option>
+          </select>
+          <button class="btn btn-small" onclick="createNewDocument()">➕ New</button>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="device-name">📱 <span id="deviceName">Loading...</span></div>
+        <div class="status-indicator" id="statusIndicator">Ready</div>
+        <button class="btn btn-small" onclick="logout()">🔓 Logout</button>
+      </div>
+    </header>
+
+    <!-- Workspace -->
+    <div class="workspace">
+      <!-- Left Panel: Creative Tools -->
+      <div class="left-panel">
+        <div class="panel-section">
+          <div class="section-title">🧠 Inspiration Bank</div>
+          <div class="word-bank" id="wordBank">
+            <!-- Dynamic word chips will be added here -->
+          </div>
+          <button class="btn btn-small" onclick="loadThemeWords()">🎲 New Theme</button>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">🎵 Song Structure</div>
+          <button class="btn btn-small" onclick="addBlock('verse')">Add Verse</button>
+          <button class="btn btn-small" onclick="addBlock('chorus')">Add Chorus</button>
+          <button class="btn btn-small" onclick="addBlock('bridge')">Add Bridge</button>
+          <button class="btn btn-small" onclick="addBlock('freeform')">Free Form</button>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">📊 Session Analytics</div>
+          <div class="analytics-grid">
+            <div class="stat-card">
+              <div class="stat-number" id="wordCount">0</div>
+              <div class="stat-label">Words</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="tagCount">0</div>
+              <div class="stat-label">Tags</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="sessionTime">0m</div>
+              <div class="stat-label">Session</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="blockCount">0</div>
+              <div class="stat-label">Blocks</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center Panel: Writing Area -->
+      <div class="center-panel" id="centerPanel">
+        <!-- Writing blocks will be dynamically added here -->
+      </div>
+
+      <!-- Right Panel: Rhymes & Analysis -->
+      <div class="right-panel">
+        <div class="panel-section">
+          <div class="section-title">🎯 Rhyme Suggestions</div>
+          <div id="rhymeOutput">Select text and click "Find Rhymes" to get suggestions.</div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">🏷️ Document Tags</div>
+          <div class="tag-display" id="tagDisplay">
+            Tags will appear as you write...
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">📝 Writing Insights</div>
+          <div id="insightDisplay">
+            <div class="stat-card">
+              <div class="stat-label">Most Used Words</div>
+              <div id="topWords">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Core Constants
+    const STORAGE_KEYS = {
+      DOCUMENTS: 'secure_documents',
+      DEVICE_ID: 'device_id',
+      DEVICE_NAME: 'device_name',
+      SESSION: 'session_active',
+      ANALYTICS: 'session_analytics'
+    };
+
+    // Global State
+    let cryptoKey = null;
+    let currentDocument = null;
+    let documents = {};
+    let sessionStartTime = Date.now();
+    let autoSaveInterval = null;
+    let blockCounter = 0;
+
+    // Word Banks for Creative Inspiration
+    const THEME_BANKS = {
+      medical: ['alveoli', 'bronchi', 'diffusion', 'capillaries', 'hemoglobin', 'ventricle', 'oxygenate', 'carbon dioxide', 'heartbeat', 'trachea', 'bloodstream'],
+      nature: ['mountains', 'rivers', 'forests', 'oceans', 'meadows', 'sunrise', 'moonlight', 'storms', 'seasons', 'wilderness'],
+      emotions: ['longing', 'euphoria', 'melancholy', 'passion', 'serenity', 'turbulence', 'hope', 'despair', 'love', 'freedom'],
+      urban: ['neon', 'concrete', 'subway', 'skyscrapers', 'traffic', 'crowds', 'streetlights', 'sirens', 'windows', 'shadows']
+    };
+
+    const RHYME_DATABASE = {
+      "love": ["dove", "shove", "above", "glove", "of"],
+      "fire": ["desire", "liar", "choir", "higher", "wire"],
+      "night": ["light", "sight", "flight", "bright", "might"],
+      "heart": ["start", "part", "art", "smart", "apart"],
+      "time": ["rhyme", "climb", "prime", "mime", "sublime"],
+      "pain": ["rain", "gain", "strain", "chain", "main"],
+      "dream": ["stream", "cream", "beam", "team", "seem"]
+    };
+
+    // ============== SECURITY SYSTEM ==============
+
+    function getDeviceId() {
+      let id = localStorage.getItem(STORAGE_KEYS.DEVICE_ID);
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem(STORAGE_KEYS.DEVICE_ID, id);
+      }
+      return id;
+    }
+
+    function getDeviceName() {
+      return localStorage.getItem(STORAGE_KEYS.DEVICE_NAME) || 'My Creative Device';
+    }
+
+    function setDeviceName(name) {
+      localStorage.setItem(STORAGE_KEYS.DEVICE_NAME, name);
+      document.getElementById('deviceName').textContent = name;
+    }
+
+    async function deriveKey(password) {
+      const enc = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        enc.encode(password),
+        "PBKDF2",
+        false,
+        ["deriveKey"]
+      );
+      return crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt: enc.encode("creative-journal-salt-2025"),
+          iterations: 100000,
+          hash: "SHA-256"
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    async function encryptData(data, key) {
+      const enc = new TextEncoder();
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const ciphertext = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        key,
+        enc.encode(JSON.stringify(data))
+      );
+      return {
+        iv: Array.from(iv),
+        data: Array.from(new Uint8Array(ciphertext))
+      };
+    }
+
+    async function decryptData(encrypted, key) {
+      const dec = new TextDecoder();
+      const iv = new Uint8Array(encrypted.iv);
+      const data = new Uint8Array(encrypted.data);
+      try {
+        const decrypted = await crypto.subtle.decrypt(
+          { name: "AES-GCM", iv },
+          key,
+          data
+        );
+        return JSON.parse(dec.decode(decrypted));
+      } catch (err) {
+        console.error('Decryption failed:', err);
+        return null;
+      }
+    }
+
+    async function submitPassword() {
+      const input = document.getElementById('passwordInput');
+      const overlay = document.getElementById('passwordOverlay');
+      const fallbackLog = document.getElementById('fallbackLog');
+      const password = input.value.trim();
+
+      if (!password) {
+        fallbackLog.textContent = "⚠️ Please enter a password.";
+        return;
+      }
+
+      try {
+        cryptoKey = await deriveKey(password);
+        
+        // Test decryption with existing data
+        const savedDocs = localStorage.getItem(STORAGE_KEYS.DOCUMENTS);
+        if (savedDocs) {
+          const testDecrypt = await decryptData(JSON.parse(savedDocs), cryptoKey);
+          if (testDecrypt === null) {
+            fallbackLog.textContent = "⚠️ Incorrect password.";
+            return;
+          }
+          documents = testDecrypt;
+        }
+
+        sessionStorage.setItem(STORAGE_KEYS.SESSION, 'true');
+        overlay.style.display = 'none';
+        await initializeApp();
+      } catch (error) {
+        fallbackLog.textContent = "⚠️ Authentication failed.";
+        console.error('Login error:', error);
+      }
+    }
+
+    function logout() {
+      sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+      cryptoKey = null;
+      documents = {};
+      currentDocument = null;
+      location.reload();
+    }
+
+    // ============== DOCUMENT MANAGEMENT ==============
+
+    async function saveDocuments() {
+      if (!cryptoKey) return;
+      
+      const encrypted = await encryptData(documents, cryptoKey);
+      localStorage.setItem(STORAGE_KEYS.DOCUMENTS, JSON.stringify(encrypted));
+      
+      updateStatusIndicator('Saved', 'success');
+      setTimeout(() => updateStatusIndicator('Ready'), 2000);
+    }
+
+    async function loadDocuments() {
+      const saved = localStorage.getItem(STORAGE_KEYS.DOCUMENTS);
+      if (saved && cryptoKey) {
+        const decrypted = await decryptData(JSON.parse(saved), cryptoKey);
+        if (decrypted) {
+          documents = decrypted;
+          updateDocumentList();
+        }
+      }
+    }
+
+    function updateDocumentList() {
+      const select = document.getElementById('documentList');
+      select.innerHTML = '<option value="">(Select or Create)</option>';
+      
+      Object.keys(documents).forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+      });
+    }
+
+    async function createNewDocument() {
+      const name = prompt("Enter document name:");
+      if (!name || documents[name]) {
+        if (documents[name]) alert("Document already exists!");
+        return;
+      }
+      
+      documents[name] = {
+        id: crypto.randomUUID(),
+        name: name,
+        created: Date.now(),
+        modified: Date.now(),
+        blocks: [],
+        metadata: {
+          wordCount: 0,
+          tags: [],
+          structure: 'freeform'
+        }
+      };
+      
+      await saveDocuments();
+      updateDocumentList();
+      document.getElementById('documentList').value = name;
+      loadDocument(name);
+    }
+
+    async function loadDocument(name) {
+      if (!name || !documents[name]) return;
+      
+      currentDocument = name;
+      const doc = documents[name];
+      
+      // Clear center panel
+      const centerPanel = document.getElementById('centerPanel');
+      centerPanel.innerHTML = '';
+      
+      // Load blocks
+      doc.blocks.forEach(block => {
+        createWritingBlock(block.type, block.content, block.id);
+      });
+      
+      // If no blocks, create a default one
+      if (doc.blocks.length === 0) {
+        addBlock('freeform');
+      }
+      
+      updateStatusIndicator(`Loaded: ${name}`);
+      updateAnalytics();
+    }
+
+    // ============== WRITING BLOCKS ==============
+
+    function createWritingBlock(type, content = '', id = null) {
+      const blockId = id || crypto.randomUUID();
+      const centerPanel = document.getElementById('centerPanel');
+      
+      const blockElement = document.createElement('div');
+      blockElement.className = 'writing-block';
+      blockElement.dataset.blockId = blockId;
+      blockElement.dataset.blockType = type;
+      
+      const typeLabels = {
+        verse: '📝 Verse',
+        chorus: '🎵 Chorus',
+        bridge: '🌉 Bridge',
+        freeform: '✨ Free Form'
+      };
+      
+      blockElement.innerHTML = `
+        <div class="block-header">
+          <div class="block-title">${typeLabels[type] || '✨ Free Form'}</div>
+          <div class="block-controls">
+            <button class="btn btn-small" onclick="findRhymes(this)">🎯 Rhymes</button>
+            <button class="btn btn-small" onclick="addInspiration(this)">💡 Inspire</button>
+            <button class="btn btn-small" onclick="removeBlock('${blockId}')">🗑️</button>
+          </div>
+        </div>
+        <textarea class="writing-area" placeholder="Start writing your ${type}..." oninput="handleInput(this)">${content}</textarea>
+      `;
+      
+      centerPanel.appendChild(blockElement);
+      blockCounter++;
+      
+      // Auto-save setup
+      const textarea = blockElement.querySelector('.writing-area');
+      let saveTimeout;
+      textarea.addEventListener('input', () => {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(autoSave, 1000);
+      });
+      
+      return blockId;
+    }
+
+    function addBlock(type) {
+      if (!currentDocument) {
+        alert('Please create or select a document first.');
+        return;
+      }
+      
+      const blockId = createWritingBlock(type);
+      
+      // Add to document
+      documents[currentDocument].blocks.push({
+        id: blockId,
+        type: type,
+        content: '',
+        created: Date.now(),
+        modified: Date.now()
+      });
+      
+      autoSave();
+      updateAnalytics();
+    }
+
+    function removeBlock(blockId) {
+      if (!currentDocument) return;
+      
+      // Remove from DOM
+      const blockElement = document.querySelector(`[data-block-id="${blockId}"]`);
+      if (blockElement) {
+        blockElement.remove();
+      }
+      
+      // Remove from document
+      const doc = documents[currentDocument];
+      doc.blocks = doc.blocks.filter(block => block.id !== blockId);
+      
+      autoSave();
+      updateAnalytics();
+    }
+
+    async function autoSave() {
+      if (!currentDocument || !cryptoKey) return;
+      
+      const doc = documents[currentDocument];
+      const blockElements = document.querySelectorAll('.writing-block');
+      
+      // Update document blocks with current content
+      blockElements.forEach(element => {
+        const blockId = element.dataset.blockId;
+        const content = element.querySelector('.writing-area').value;
+        
+        const block = doc.blocks.find(b => b.id === blockId);
+        if (block) {
+          block.content = content;
+          block.modified = Date.now();
+        }
+      });
+      
+      doc.modified = Date.now();
+      await saveDocuments();
+      updateAnalytics();
+    }
+
+    function handleInput(textarea) {
+      const text = textarea.value;
+      parseTags(text);
+      updateAnalytics();
+    }
+
+    // ============== CREATIVE TOOLS ==============
+
+    function loadThemeWords() {
+      const themes = Object.keys(THEME_BANKS);
+      const randomTheme = themes[Math.floor(Math.random() * themes.length)];
+      const words = THEME_BANKS[randomTheme];
+      
+      const wordBank = document.getElementById('wordBank');
+      wordBank.innerHTML = '';
+      
+      words.forEach(word => {
+        const chip = document.createElement('div');
+        chip.className = 'word-chip';
+        chip.textContent = word;
+        chip.onclick = () => insertWord(word);
+        wordBank.appendChild(chip);
+      });
+    }
+
+    function insertWord(word) {
+      const focused = document.activeElement;
+      if (focused.tagName.toLowerCase() === 'textarea') {
+        const start = focused.selectionStart;
+        const end = focused.selectionEnd;
+        const value = focused.value;
+        focused.value = value.substring(0, start) + word + value.substring(end);
+        focused.selectionStart = focused.selectionEnd = start + word.length;
+        focused.focus();
+        handleInput(focused);
+      }
+    }
+
+    function addInspiration(button) {
+      const textarea = button.closest('.writing-block').querySelector('.writing-area');
+      const inspirations = [
+        "If dreams were made of silver light",
+        "In the space between heartbeats",
+        "Where shadows dance with moonlight",
+        "Like whispers in the wind",
+        "Through the corridors of time",
+        "In the garden of forgotten words",
+        "When the world falls silent",
+        "Beyond the edge of reason"
+      ];
+      
+      const inspiration = inspirations[Math.floor(Math.random() * inspirations.length)];
+      const currentPos = textarea.selectionStart;
+      const currentValue = textarea.value;
+      
+      textarea.value = currentValue.substring(0, currentPos) + inspiration + "\n" + currentValue.substring(currentPos);
+      textarea.focus();
+      handleInput(textarea);
+    }
+
+    function findRhymes(button) {
+      const textarea = button.closest('.writing-block').querySelector('.writing-area');
+      const text = textarea.value;
+      const selection = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+      
+      let targetWord = selection.trim();
+      if (!targetWord) {
+        // Get last word from current line
+        const lines = text.split('\n');
+        const currentLine = lines[lines.length - 1] || '';
+        const words = currentLine.split(/\s+/);
+        targetWord = words[words.length - 1].replace(/[^a-zA-Z]/g, '').toLowerCase();
+      }
+      
+      const rhymes = RHYME_DATABASE[targetWord] || [];
+      const output = document.getElementById('rhymeOutput');
+      
+      if (rhymes.length > 0) {
+        output.innerHTML = `<strong>Rhymes for "${targetWord}":</strong><br>` + 
+          rhymes.map(word => `<span class="word-chip" onclick="insertWord('${word}')">${word}</span>`).join(' ');
+      } else {
+        output.innerHTML = `<em>No rhymes found for "${targetWord}"</em>`;
+      }
+    }
+
+    // ============== ANALYTICS & INSIGHTS ==============
+
+    function updateAnalytics() {
+      if (!currentDocument) return;
+      
+      const doc = documents[currentDocument];
+      let totalWords = 0;
+      let allTags = new Set();
+      
+      // Count words and collect tags
+      doc.blocks.forEach(block => {
+        const words = block.content.split(/\s+/).filter(word => word.length > 0);
+        totalWords += words.length;
+        
+        const tags = block.content.match(/[#@]\w+/g) || [];
+        tags.forEach(tag => allTags.add(tag));
+      });
+      
+      // Update displays
+      document.getElementById('wordCount').textContent = totalWords;
+      document.getElementById('tagCount').textContent = allTags.size;
+      document.getElementById('blockCount').textContent = doc.blocks.length;
+      
+      // Update session time
+      const sessionMinutes = Math.floor((Date.now() - sessionStartTime) / 60000);
+      document.getElementById('sessionTime').textContent = `${sessionMinutes}m`;
+      
+      // Update tag display
+      updateTagDisplay(Array.from(allTags));
+      
+      // Update document metadata
+      doc.metadata.wordCount = totalWords;
+      doc.metadata.tags = Array.from(allTags);
+    }
+
+    function updateTagDisplay(tags) {
+     const tagDisplay = document.getElementById('tagDisplay');
+     if (tags.length === 0) {
+       tagDisplay.textContent = 'No tags found...';
+       return;
+     }
+     
+     tagDisplay.innerHTML = tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+   }
+
+   function parseTags(text) {
+     const tags = [...text.matchAll(/([#@]\w+)/g)].map(match => match[1]);
+     return tags;
+   }
+
+   function updateStatusIndicator(message, type = 'info') {
+     const indicator = document.getElementById('statusIndicator');
+     indicator.textContent = message;
+     indicator.className = `status-indicator ${type}`;
+   }
+
+   function generateWordCloudData() {
+     if (!currentDocument) return [];
+     
+     const doc = documents[currentDocument];
+     const wordFreq = {};
+     
+     doc.blocks.forEach(block => {
+       const words = block.content.toLowerCase()
+         .replace(/[#@]/g, '')
+         .split(/\s+/)
+         .filter(word => word.length > 3 && !['the', 'and', 'that', 'this', 'with', 'from', 'they', 'have', 'been', 'were', 'said', 'each', 'which', 'their', 'time', 'will', 'about', 'would', 'there', 'could', 'other', 'after', 'first', 'well', 'also', 'where', 'much', 'then', 'them', 'these', 'many', 'some', 'very', 'when', 'most', 'more', 'than', 'only', 'over', 'such', 'even', 'just', 'into', 'like', 'your', 'what', 'know', 'make', 'come', 'good', 'think', 'take', 'want', 'give', 'look', 'feel', 'find', 'work', 'need', 'seem', 'call', 'keep', 'last', 'own', 'say', 'she', 'may', 'use', 'her', 'him', 'his', 'had', 'has', 'who', 'did', 'get', 'may', 'way', 'new', 'now', 'man', 'old', 'see', 'two', 'how', 'its', 'our', 'out', 'day', 'go', 'up', 'no', 'if', 'do', 'he', 'my', 'me', 'we', 'so', 'an', 'as', 'at', 'be', 'by', 'for', 'in', 'is', 'it', 'of', 'on', 'to', 'or', 'you', 'all', 'but', 'can', 'not', 'one', 'was', 'are', 'his', 'her', 'him', 'she', 'they', 'them', 'their', 'this', 'that', 'these', 'those', 'what', 'when', 'where', 'which', 'who', 'why', 'how'].includes(word));
+       
+       words.forEach(word => {
+         wordFreq[word] = (wordFreq[word] || 0) + 1;
+       });
+     });
+     
+     const topWords = Object.entries(wordFreq)
+       .sort(([,a], [,b]) => b - a)
+       .slice(0, 5)
+       .map(([word, count]) => `${word} (${count})`)
+       .join(', ');
+     
+     document.getElementById('topWords').textContent = topWords || 'No words yet...';
+   }
+
+   // ============== ADVANCED FEATURES ==============
+
+   function exportDocument() {
+     if (!currentDocument) return;
+     
+     const doc = documents[currentDocument];
+     let exportText = `# ${doc.name}\n\n`;
+     exportText += `Created: ${new Date(doc.created).toLocaleString()}\n`;
+     exportText += `Modified: ${new Date(doc.modified).toLocaleString()}\n`;
+     exportText += `Word Count: ${doc.metadata.wordCount}\n`;
+     exportText += `Tags: ${doc.metadata.tags.join(', ')}\n\n`;
+     
+     doc.blocks.forEach((block, index) => {
+       exportText += `## ${block.type.charAt(0).toUpperCase() + block.type.slice(1)} ${index + 1}\n\n`;
+       exportText += block.content + '\n\n';
+     });
+     
+     const blob = new Blob([exportText], { type: 'text/plain' });
+     const url = URL.createObjectURL(blob);
+     const a = document.createElement('a');
+     a.href = url;
+     a.download = `${doc.name.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
+     a.click();
+     URL.revokeObjectURL(url);
+   }
+
+   function duplicateDocument() {
+     if (!currentDocument) return;
+     
+     const originalDoc = documents[currentDocument];
+     const newName = prompt(`Enter new name for copy of "${originalDoc.name}":`, `${originalDoc.name} - Copy`);
+     
+     if (!newName || documents[newName]) {
+       if (documents[newName]) alert("Document already exists!");
+       return;
+     }
+     
+     const newDoc = {
+       ...originalDoc,
+       id: crypto.randomUUID(),
+       name: newName,
+       created: Date.now(),
+       modified: Date.now(),
+       blocks: originalDoc.blocks.map(block => ({
+         ...block,
+         id: crypto.randomUUID()
+       }))
+     };
+     
+     documents[newName] = newDoc;
+     saveDocuments();
+     updateDocumentList();
+     document.getElementById('documentList').value = newName;
+     loadDocument(newName);
+   }
+
+   function deleteDocument() {
+     if (!currentDocument) return;
+     
+     const confirmDelete = confirm(`Are you sure you want to delete "${currentDocument}"? This cannot be undone.`);
+     if (!confirmDelete) return;
+     
+     delete documents[currentDocument];
+     saveDocuments();
+     updateDocumentList();
+     
+     // Clear center panel
+     document.getElementById('centerPanel').innerHTML = '';
+     currentDocument = null;
+     updateStatusIndicator('Document deleted');
+   }
+
+   // ============== SPEECH RECOGNITION ==============
+
+   let recognition;
+   function startSpeechToText(textarea) {
+     if (!('webkitSpeechRecognition' in window)) {
+       alert('Speech Recognition not supported in this browser');
+       return;
+     }
+
+     recognition = new webkitSpeechRecognition();
+     recognition.continuous = false;
+     recognition.interimResults = false;
+     recognition.lang = 'en-US';
+
+     recognition.onresult = function(event) {
+       const transcript = event.results[0][0].transcript;
+       const currentPos = textarea.selectionStart;
+       const currentValue = textarea.value;
+       
+       textarea.value = currentValue.substring(0, currentPos) + 
+                       (currentValue.substring(0, currentPos) ? ' ' : '') + 
+                       transcript + 
+                       currentValue.substring(currentPos);
+       textarea.focus();
+       handleInput(textarea);
+     };
+
+     recognition.onerror = function(event) {
+       console.error('Speech recognition error:', event.error);
+       alert(`Speech recognition error: ${event.error}`);
+     };
+
+     recognition.start();
+   }
+
+   // ============== KEYBOARD SHORTCUTS ==============
+
+   document.addEventListener('keydown', function(e) {
+     if (e.ctrlKey || e.metaKey) {
+       switch(e.key) {
+         case 's':
+           e.preventDefault();
+           autoSave();
+           break;
+         case 'n':
+           e.preventDefault();
+           createNewDocument();
+           break;
+         case 'e':
+           e.preventDefault();
+           exportDocument();
+           break;
+         case 'b':
+           e.preventDefault();
+           addBlock('freeform');
+           break;
+       }
+     }
+   });
+
+   // ============== INITIALIZATION ==============
+
+   async function initializeApp() {
+     try {
+       // Set device name
+       document.getElementById('deviceName').textContent = getDeviceName();
+       
+       // Load documents
+       await loadDocuments();
+       
+       // Load initial theme words
+       loadThemeWords();
+       
+       // Start analytics updates
+       setInterval(updateAnalytics, 5000);
+       
+       // Set up auto-save
+       autoSaveInterval = setInterval(autoSave, 30000);
+       
+       updateStatusIndicator('Ready to write');
+       
+       // If no documents exist, create a welcome document
+       if (Object.keys(documents).length === 0) {
+         await createWelcomeDocument();
+       }
+       
+     } catch (error) {
+       console.error('Initialization error:', error);
+       updateStatusIndicator('Error initializing app', 'error');
+     }
+   }
+
+   async function createWelcomeDocument() {
+     const welcomeDoc = {
+       id: crypto.randomUUID(),
+       name: 'Welcome',
+       created: Date.now(),
+       modified: Date.now(),
+       blocks: [
+         {
+           id: crypto.randomUUID(),
+           type: 'freeform',
+           content: `# Welcome to your Secure Creative Journal! 🎨
+
+This is your private, encrypted space for:
+- Songwriting and lyric composition
+- Creative writing and poetry
+- Brainstorming and idea capture
+- Structured storytelling
+
+## Features you'll love:
+- **Encryption**: All your work is encrypted locally
+- **Inspiration Tools**: Word banks and creative prompts
+- **Rhyme Assistant**: Find rhymes for your lyrics
+- **Analytics**: Track your writing progress
+- **Tagging**: Use #tags and @mentions to organize
+
+## Quick Tips:
+- Use Ctrl+S to save manually
+- Use Ctrl+N to create new documents
+- Use Ctrl+B to add writing blocks
+- Click word chips to insert inspiration
+- Select text and use "Find Rhymes" for lyric help
+
+Start writing your first piece below, or create a new document!
+
+#welcome #tutorial @getting-started`,
+           created: Date.now(),
+           modified: Date.now()
+         }
+       ],
+       metadata: {
+         wordCount: 0,
+         tags: ['#welcome', '#tutorial', '@getting-started'],
+         structure: 'freeform'
+       }
+     };
+     
+     documents['Welcome'] = welcomeDoc;
+     await saveDocuments();
+     updateDocumentList();
+     document.getElementById('documentList').value = 'Welcome';
+     loadDocument('Welcome');
+   }
+
+   // Check for existing session
+   async function checkSession() {
+     if (sessionStorage.getItem(STORAGE_KEYS.SESSION)) {
+       try {
+         cryptoKey = await deriveKey("1234"); // You might want to implement secure session key storage
+         const testData = localStorage.getItem(STORAGE_KEYS.DOCUMENTS);
+         if (testData) {
+           const testDecrypt = await decryptData(JSON.parse(testData), cryptoKey);
+           if (testDecrypt) {
+             document.getElementById('passwordOverlay').style.display = 'none';
+             await initializeApp();
+             return;
+           }
+         }
+       } catch (error) {
+         console.error('Session check failed:', error);
+       }
+     }
+   }
+
+   // Add right-click context menu for advanced options
+   document.addEventListener('contextmenu', function(e) {
+     if (e.target.classList.contains('writing-block')) {
+       e.preventDefault();
+       // You could add a context menu here for block-specific options
+     }
+   });
+
+   // Enhanced error handling
+   window.addEventListener('error', function(e) {
+     console.error('Global error:', e);
+     updateStatusIndicator('An error occurred', 'error');
+   });
+
+   // Handle page unload
+   window.addEventListener('beforeunload', function(e) {
+     if (currentDocument) {
+       autoSave();
+     }
+   });
+
+   // ============== STARTUP ==============
+
+   // Initialize on page load
+   document.addEventListener('DOMContentLoaded', function() {
+     checkSession();
+     
+     // Set up password form
+     document.getElementById('passwordInput').addEventListener('keydown', function(e) {
+       if (e.key === 'Enter') {
+         submitPassword();
+       }
+     });
+     
+     // Add keyboard shortcut hints
+     console.log(`
+🔐 Secure Creative Journal - Keyboard Shortcuts:
+Ctrl+S - Save document
+Ctrl+N - New document  
+Ctrl+B - Add writing block
+Ctrl+E - Export document
+     `);
+   });
+
+   // Export functions for global access
+   window.submitPassword = submitPassword;
+   window.logout = logout;
+   window.createNewDocument = createNewDocument;
+   window.loadDocument = loadDocument;
+   window.addBlock = addBlock;
+   window.removeBlock = removeBlock;
+   window.findRhymes = findRhymes;
+   window.addInspiration = addInspiration;
+   window.loadThemeWords = loadThemeWords;
+   window.insertWord = insertWord;
+   window.handleInput = handleInput;
+   window.exportDocument = exportDocument;
+   window.duplicateDocument = duplicateDocument;
+   window.deleteDocument = deleteDocument;
+   window.startSpeechToText = startSpeechToText;
+ </script>
+</body>
+</html>

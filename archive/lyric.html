@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lyric Architect</title>
+  <style>
+    body {
+      background: #0c0f1a;
+      color: #e3e6f0;
+      font-family: 'Courier New', monospace;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      padding: 1rem;
+      font-size: 1.8rem;
+      font-weight: bold;
+      background: #131827;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .workspace {
+      display: flex;
+      flex-direction: row;
+      height: 100%;
+      width: 100%;
+    }
+
+    .left-panel, .right-panel {
+      width: 25%;
+      background: #1c1f2b;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+
+    .center-panel {
+      flex-grow: 1;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .lyric-block {
+      margin-bottom: 1rem;
+      background: #2b2f3f;
+      padding: 1rem;
+      border-radius: 6px;
+      box-shadow: inset 0 0 6px rgba(255,255,255,0.05);
+    }
+
+    .lyric-block h3 {
+      margin: 0 0 0.5rem 0;
+      color: #9fbfff;
+    }
+
+    textarea {
+      width: 100%;
+      background: #12131a;
+      color: #e0e0e0;
+      border: 1px solid #444;
+      padding: 0.5rem;
+      border-radius: 4px;
+      font-size: 1rem;
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    button {
+      background: #3f5efb;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      margin-top: 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #2b45b7;
+    }
+
+    .word-bank span {
+      display: inline-block;
+      background: #394256;
+      padding: 0.25rem 0.5rem;
+      margin: 0.25rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .word-bank span:hover {
+      background: #5d6c8a;
+    }
+
+    .section-title {
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #c2d6ff;
+    }
+
+    .save-btn {
+      background: #1dd1a1;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header>🧬 Lyric Architect</header>
+  <div class="workspace">
+    <div class="left-panel">
+      <div class="section-title">🧠 Theme Words</div>
+      <div class="word-bank">
+        <span onclick="insertWord('alveoli')">alveoli</span>
+        <span onclick="insertWord('bronchi')">bronchi</span>
+        <span onclick="insertWord('diffusion')">diffusion</span>
+        <span onclick="insertWord('capillaries')">capillaries</span>
+        <span onclick="insertWord('hemoglobin')">hemoglobin</span>
+        <span onclick="insertWord('ventricle')">ventricle</span>
+        <span onclick="insertWord('oxygenate')">oxygenate</span>
+        <span onclick="insertWord('carbon dioxide')">carbon dioxide</span>
+        <span onclick="insertWord('heartbeat')">heartbeat</span>
+        <span onclick="insertWord('trachea')">trachea</span>
+        <span onclick="insertWord('bloodstream')">bloodstream</span>
+      </div>
+    </div>
+
+    <div class="center-panel">
+      <div class="lyric-block">
+        <h3>Verse 1</h3>
+        <textarea placeholder="Start your verse here..."></textarea>
+        <button onclick="suggestRhymes(this)">Suggest Rhymes</button>
+      </div>
+      <button onclick="insertRandomLine()">🎲 Inject Inspiration</button>
+
+      <div class="lyric-block">
+        <h3>Chorus</h3>
+        <textarea placeholder="Write your chorus..."></textarea>
+        <button onclick="suggestRhymes(this)">Suggest Rhymes</button>
+      </div>
+      <button onclick="insertRandomLine()">🎲 Inject Inspiration</button>
+
+      <div class="lyric-block">
+        <h3>Bridge</h3>
+        <textarea placeholder="Bridge or breakdown lyrics..."></textarea>
+        <button onclick="suggestRhymes(this)">Suggest Rhymes</button>
+      </div>
+      <button onclick="insertRandomLine()">🎲 Inject Inspiration</button>
+
+      <button class="save-btn" onclick="saveLyrics()">💾 Save Lyrics</button>
+    </div>
+
+    <div class="right-panel">
+      <div class="section-title">🎯 Rhyme Suggestions</div>
+      <div id="rhyme-output">Click "Suggest Rhymes" after writing a line.</div>
+    </div>
+  </div>
+  <div class="section-title">🎵 Vocal Key Suggestion</div>
+  <select id="vocalType" onchange="suggestKey()">
+    <option value="">Select Vocal Type</option>
+    <option value="female">Female (Soprano/Alto)</option>
+    <option value="male">Male (Tenor/Baritone)</option>
+  </select>
+  <div id="keySuggestion" style="margin-top:0.5rem;"></div>
+  
+  <script>
+    function suggestKey() {
+  const type = document.getElementById("vocalType").value;
+  let keys = [];
+  if (type === "female") keys = ["C", "D", "E♭", "F", "A♭"];
+  if (type === "male") keys = ["G", "A", "B♭", "C", "E"];
+
+  const suggested = keys[Math.floor(Math.random() * keys.length)];
+  document.getElementById("keySuggestion").innerText = type
+    ? `Suggested Key: ${suggested} major`
+    : "";
+}
+    const sampleRhymes = {
+      "lungs": ["tongues", "sung", "young", "rungs"],
+      "love": ["dove", "shove", "above", "glove"],
+      "fire": ["desire", "wire", "choir", "liar"],
+      "flow": ["go", "know", "glow", "below"]
+    };
+
+    function suggestRhymes(button) {
+      const textarea = button.previousElementSibling;
+      const text = textarea.value.trim();
+      const lastWord = text.split(/\s+/).pop().toLowerCase().replace(/[^a-z]/g, '');
+
+      const rhymes = sampleRhymes[lastWord] || ["(no suggestions found)"];
+      document.getElementById('rhyme-output').innerText = `Rhymes for "${lastWord}":\n- ` + rhymes.join('\n- ');
+    }
+
+    function insertWord(word) {
+      const focused = document.activeElement;
+      if (focused.tagName.toLowerCase() === 'textarea') {
+        const start = focused.selectionStart;
+        const end = focused.selectionEnd;
+        const value = focused.value;
+        focused.value = value.substring(0, start) + word + value.substring(end);
+        focused.selectionStart = focused.selectionEnd = start + word.length;
+        focused.focus();
+      }
+    }
+
+    function saveLyrics() {
+      const areas = document.querySelectorAll('textarea');
+      let output = '';
+      areas.forEach((area, i) => {
+        output += `--- Block ${i+1} ---\n${area.value.trim()}\n\n`;
+      });
+
+      const blob = new Blob([output], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'lyrics.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    const metaphoricTemplates = [
+  "If {noun} in the {place} were {metaphor}",
+  "Wishin' on a {object}, flyin' past the {emotion}",
+  "Caught between the {emotion} and the {action}",
+  "If my {body_part} could talk, they'd say {statement}",
+  "Underneath the {element}, I {verb} your name"
+];
+
+const nouns = ["airplanes", "clouds", "sirens", "lungs", "echoes"];
+const places = ["night skies", "ocean floor", "city lights", "storm", "silence"];
+const metaphors = ["shooting stars", "flares", "mirages", "teardrops", "whispers"];
+const emotions = ["love", "fear", "desire", "freedom"];
+const bodyParts = ["lungs", "heart", "eyes"];
+const verbs = ["scream", "whisper", "echo", "carve"];
+const statements = ["you never knew me", "I’m still breathing", "we were never broken"];
+
+function generateLine() {
+  let t = metaphoricTemplates[Math.floor(Math.random() * metaphoricTemplates.length)];
+  t = t.replace("{noun}", pick(nouns))
+       .replace("{place}", pick(places))
+       .replace("{metaphor}", pick(metaphors))
+       .replace("{object}", pick(nouns))
+       .replace("{emotion}", pick(emotions))
+       .replace("{action}", pick(verbs))
+       .replace("{body_part}", pick(bodyParts))
+       .replace("{statement}", pick(statements))
+       .replace("{verb}", pick(verbs))
+       .replace("{element}", pick(places));
+  return t;
+}
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function insertRandomLine() {
+  const focused = document.activeElement;
+  if (focused.tagName.toLowerCase() === 'textarea') {
+    const line = generateLine();
+    const start = focused.selectionStart;
+    const end = focused.selectionEnd;
+    const value = focused.value;
+    focused.value = value.substring(0, start) + line + "\n" + value.substring(end);
+    focused.selectionStart = focused.selectionEnd = start + line.length + 1;
+    focused.focus();
+  }
+}
+  </script>
+</body>
+</html>

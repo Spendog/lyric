@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lyric Architect | Secure Songwriting</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Authentication Overlay -->
+    <div id="auth-overlay" class="glass-panel">
+        <div class="auth-box">
+            <h1>🔐 Secure Access</h1>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem;">Your lyrics are encrypted locally.</p>
+            
+            <input type="password" id="auth-password" class="auth-input" placeholder="ENTER PASSWORD" autofocus>
+            <div id="auth-error" style="color: var(--accent-danger); margin-bottom: 1rem; min-height: 1.2em;"></div>
+            
+            <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1rem;" onclick="unlockApp()">
+                UNLOCK JOURNAL
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <header>
+        <div class="logo">
+            <span>🧬</span> Lyric Architect
+        </div>
+        
+        <div class="header-controls">
+            <select id="doc-select" class="btn" onchange="loadDocument(this.value)">
+                <option value="">Loading...</option>
+            </select>
+            <button class="btn btn-primary" onclick="createDocument()">+ New Song</button>
+            <div id="status-indicator" class="status-badge">Ready</div>
+        </div>
+    </header>
+
+    <main class="main-layout">
+        <!-- Left Panel: Tools -->
+        <aside class="panel left-panel glass-panel">
+            <div class="panel-header">
+                <span class="panel-title">Inspiration</span>
+            </div>
+            <div class="panel-content">
+                <div style="margin-bottom: 1rem;">
+                    <label style="font-size: 0.8rem; color: var(--text-secondary);">THEME</label>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-sm" onclick="loadTheme('nature')">Nature</button>
+                        <button class="btn btn-sm" onclick="loadTheme('urban')">Urban</button>
+                        <button class="btn btn-sm" onclick="loadTheme('emotions')">Emotion</button>
+                    </div>
+                </div>
+                
+                <div id="word-bank" class="chip-container">
+                    <!-- Dynamic Chips -->
+                </div>
+            </div>
+            
+            <div class="panel-header" style="border-top: 1px solid var(--bg-glass-border);">
+                <span class="panel-title">Structure</span>
+            </div>
+            <div class="panel-content" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <button class="btn" onclick="addBlock('verse')">Add Verse</button>
+                <button class="btn" onclick="addBlock('chorus')">Add Chorus</button>
+                <button class="btn" onclick="addBlock('bridge')">Add Bridge</button>
+            </div>
+        </aside>
+
+        <!-- Center Panel: Writing -->
+        <section class="panel center-panel">
+            <div class="panel-content" style="padding: 0;">
+                <div id="writing-area" class="writing-container">
+                    <!-- Blocks go here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel: Stats & Info -->
+        <aside class="panel right-panel glass-panel">
+            <div class="panel-header">
+                <span class="panel-title">Analytics</span>
+            </div>
+            <div class="panel-content">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <div id="stat-words" style="font-size: 2.5rem; font-weight: 700; color: var(--accent-primary);">0</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">WORDS</div>
+                </div>
+                
+                <div class="panel-title" style="margin-bottom: 0.5rem;">Rhyme Helper</div>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                    Highlight a word to see suggestions here.
+                    <br><br>
+                    (Coming soon in v2.1)
+                </p>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+</body>
+</html>
